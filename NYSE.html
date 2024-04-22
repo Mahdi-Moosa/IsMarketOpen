@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NYSE Opening Countdown</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background-color: #f4f4f4;
+    }
+    .time-container {
+      display: flex;
+      align-items: center;
+    }
+    .time-container h2 {
+      margin-right: 10px;
+    }
+    .countdown-container {
+      text-align: center;
+      margin-top: 20px;
+    }
+    #countdown {
+      font-size: 2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="time-container">
+    <h2>Current Time (Eastern):</h2>
+    <div id="current-time"></div>
+  </div>
+
+  <div class="countdown-container">
+    <h1>Time Until NYSE Opens</h1>
+    <div id="countdown"></div>
+  </div>
+
+  <script>
+    // Function to calculate the time until the next NYSE opening at 9:30 AM Eastern Time
+    function getTimeUntilNYSEOpens() {
+      const now = new Date();
+      const utcNow = now.getTime() + (now.getTimezoneOffset() * 60000); // Convert local time to UTC
+      const etNow = new Date(utcNow + (3600000 * -4)); // Convert UTC to Eastern Time (ET)
+
+      const currentDay = etNow.getDay();
+      let daysToAdd = 0; // Default to next day - Why this?
+      let isOpen = false;
+
+      // If today is Saturday (6) or Sunday (0), add days to get to Monday (1)
+      if (currentDay === 6) { // Saturday
+        daysToAdd = 2;
+      } else if (currentDay === 0) { // Sunday
+        daysToAdd = 1;
+      } else {
+        // If today is a weekday, check if the current time is after 9:30 AM Eastern Time
+        const openingTime = new Date(etNow);
+        openingTime.setHours(9, 30, 0, 0); // NYSE opens at 9:30 AM Eastern Time
+
+        // If it's already past 9:30 AM today, calculate time until tomorrow's opening
+        if (etNow >= openingTime) {
+          daysToAdd = 1;
+        } else {
+          // If it's a weekday and current time is within NYSE open hours
+          const closingTime = new Date(etNow);
+          closingTime.setHours(16, 0, 0, 0); // NYSE closes at 4:00 PM Eastern Time
+
+          if (etNow >= openingTime && etNow <= closingTime) {
+            isOpen = true;
+          }
+        }
+      }
+
+      if (!isOpen) {
+        // Calculate the time until the next opening time
+        const nextOpeningTime = new Date(etNow);
+        nextOpeningTime.setDate(nextOpeningTime.getDate() + daysToAdd);
+        nextOpeningTime.setHours(9, 30, 0, 0); // Set to 9:30 AM Eastern Time
+
+        const timeDiff = nextOpeningTime - etNow;
+        const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+        const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+
+        return { hours, minutes, seconds, isOpen };
+      } else {
+        return { isOpen };
+      }
+    }
+
+    // Function to update the countdown timer
+    function updateCountdown() {
+      const currentTimeElement = document.getElementById('current-time');
+      const countdownElement = document.getElementById('countdown');
+      const { hours, minutes, seconds, isOpen } = getTimeUntilNYSEOpens();
+
+      // Get current time in Eastern Time
+      const now = new Date();
+      const utcNow = now.getTime() + (now.getTimezoneOffset() * 60000); // Convert local time to UTC
+      const etNow = new Date(utcNow + (3600000 * -4)); // Convert UTC to Eastern Time (ET)
+      const etHours = etNow.getHours().toString().padStart(2, '0');
+      const etMinutes = etNow.getMinutes().toString().padStart(2, '0');
+      const etSeconds = etNow.getSeconds().toString().padStart(2, '0');
+      currentTimeElement.innerHTML = `${etHours} : ${etMinutes} : ${etSeconds}`;
+
+      if (isOpen) {
+        countdownElement.innerHTML = "NYSE is open now!";
+      } else {
+        countdownElement.innerHTML = `${hours.toString().padStart(2, '0')} : ${minutes.toString().padStart(2, '0')} : ${seconds.toString().padStart(2, '0')}`;
+      }
+    }
+
+    // Update the countdown every second
+    setInterval(updateCountdown, 1000);
+
+    // Initial call to update countdown when the page loads
+    updateCountdown();
+  </script>
+</body>
+</html>
